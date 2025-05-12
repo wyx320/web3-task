@@ -1,14 +1,16 @@
 package main
 
+import "fmt"
+
 func main() {
 
 	// 题目一：回文数
 
-	// // 题目二：有效的括号
-	// b1 := stringValidator("( [ { 12 } ] )")
-	// b2 := stringValidator("( [ { 12 ) ] )")
-	// fmt.Println(b1) // true
-	// fmt.Println(b2) // false
+	// 题目二：有效的括号
+	b1 := validBrackets("( [ { 12 } ] )")
+	b2 := validBrackets("( [ { 12 ) ] )")
+	fmt.Println(b1) // true
+	fmt.Println(b2) // false
 }
 
 /*
@@ -30,7 +32,7 @@ func main() {
 
 链接：https://leetcode-cn.com/problems/valid-parentheses/
 */
-func stringValidator(str string) (validSucceed bool) {
+func validBrackets(str string) (validSucceed bool) {
 
 	validSucceed = true // 默认有效
 

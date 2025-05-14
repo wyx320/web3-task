@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam2 "task1/exam-2"
+	exam4 "task1/exam-4"
 )
 
 func main() {
@@ -16,10 +16,14 @@ func main() {
 	// fmt.Println(singleNum) // 2
 
 	// 题目二：回文数
-	b1 := exam2.IsPalindromeSelfMake(123)
-	b2 := exam2.IsPalindromeSelfMake(121)
-	fmt.Println(b1)
-	fmt.Println(b2)
+	// b1 := exam2.IsPalindromeSelfMake(123)
+	// b2 := exam2.IsPalindromeSelfMake(121)
+	// fmt.Println(b1)
+	// fmt.Println(b2)
+	// b3 := exam2.IsPalindromeTongyiQwQMake(123)
+	// b4 := exam2.IsPalindromeTongyiQwQMake(121)
+	// fmt.Println(b3)
+	// fmt.Println(b4)
 
 	// 题目三：有效的括号
 	// str1 := "( [ { 12 } ] )"
@@ -35,4 +39,8 @@ func main() {
 
 	// fmt.Printf("Doubao-Exam-Str1: %v\n", b3) // true
 	// fmt.Printf("Doubao-Exam-Str2: %v\n", b4) // false
+
+	strs := []string{"flower", "flow", "flight"}
+	res := exam4.FindPublicPrefixDelfMake(strs)
+	fmt.Println(res)
 }

@@ -16,37 +16,32 @@ package exam4
 解释：输入不存在公共前缀。
 */
 
-func FindPublicPrefixDelfMake(strSlice []string) string {
-	resSlice := []rune{}
+func FindPublicPrefixSelfMake(strSlice []string) string {
+	if len(strSlice) == 0 {
+		return "" // 如果数组为空，则返回空字符串
+	}
 
-	tempRune := []rune{}
+	// 假设第一个字符串是公共前缀
+	prefix := strSlice[0]
 
-	index := 0
-	for _, str := range strSlice {
+	for i := 1; i < len(strSlice); i++ {
+		for !startWith(strSlice[i], prefix) {
+			// 缩短前缀
+			prefix = prefix[:len(prefix)-1]
 
-		if len(str) == 0 {
-			break
-		}
-
-		if index > len(str)-1 {
-			break
-		}
-
-		tempRune = append(tempRune, []rune(str)[index])
-
-		preLetter := tempRune[0]
-		isAllSampleLetter := true
-		for _, value := range tempRune[1:] {
-			if preLetter != value {
-				isAllSampleLetter = false
-				break
+			if prefix == "" {
+				return "" // 如果前缀为空，直接返回空字符串
 			}
 		}
-		if isAllSampleLetter {
-			resSlice = append(resSlice, preLetter)
-		}
-
-		index++
 	}
-	return string(resSlice)
+
+	return prefix
+}
+
+// startWith 判断字符串 str 是否以 prefix 开头
+func startWith(str string, prefix string) bool {
+	if len(str) < len(prefix) {
+		return false
+	}
+	return str[:len(prefix)] == prefix
 }

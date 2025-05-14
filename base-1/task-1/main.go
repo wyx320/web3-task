@@ -41,6 +41,6 @@ func main() {
 	// fmt.Printf("Doubao-Exam-Str2: %v\n", b4) // false
 
 	strs := []string{"flower", "flow", "flight"}
-	res := exam4.FindPublicPrefixDelfMake(strs)
+	res := exam4.FindPublicPrefixSelfMake(strs)
 	fmt.Println(res)
 }

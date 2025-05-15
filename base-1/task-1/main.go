@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam7 "task1/exam-7"
+	exam8 "task1/exam-8"
 )
 
 func main() {
@@ -73,6 +73,12 @@ func main() {
 	// fmt.Println(exam6.GetIntBySliceTongyiQwQMake(nums))
 
 	// 题目七：26. 删除有序数组中的重复项：
-	elementCount := exam7.RemoveDuplicates([]int{1, 2, 2, 3, 4, 5, 5, 6})
-	fmt.Println(elementCount)
+	// elementCount := exam7.RemoveDuplicates([]int{1, 2, 2, 3, 4, 5, 5, 6})
+	// fmt.Println(elementCount)
+
+	// 题目八：56. 合并区间
+	var res = exam8.ConcatRangeSelfMake([][]float64{{2, 5}, {1, 3}})
+	fmt.Printf("%#v\n", res)
+	res = exam8.ConcatRangeTongyiQwQMake([][]float64{{2, 5}, {1, 3}})
+	fmt.Printf("%#v", res)
 }

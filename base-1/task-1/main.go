@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam6 "task1/exam-6"
+	exam7 "task1/exam-7"
 )
 
 func main() {
@@ -63,12 +63,16 @@ func main() {
 	// fmt.Printf("唯一元素长度：%v", k)
 
 	// 题目六：加一
-	nums := []int{4, 3, 2, 1}
-	fmt.Println(exam6.GetIntBySliceSelfMake(nums))
-	nums = []int{9}
-	fmt.Println(exam6.GetIntBySliceSelfMake(nums))
-	nums = []int{4, 3, 2, 1}
-	fmt.Println(exam6.GetIntBySliceTongyiQwQMake(nums))
-	nums = []int{9}
-	fmt.Println(exam6.GetIntBySliceTongyiQwQMake(nums))
+	// nums := []int{4, 3, 2, 1}
+	// fmt.Println(exam6.GetIntBySliceSelfMake(nums))
+	// nums = []int{9}
+	// fmt.Println(exam6.GetIntBySliceSelfMake(nums))
+	// nums = []int{4, 3, 2, 1}
+	// fmt.Println(exam6.GetIntBySliceTongyiQwQMake(nums))
+	// nums = []int{9}
+	// fmt.Println(exam6.GetIntBySliceTongyiQwQMake(nums))
+
+	// 题目七：26. 删除有序数组中的重复项：
+	elementCount := exam7.RemoveDuplicates([]int{1, 2, 2, 3, 4, 5, 5, 6})
+	fmt.Println(elementCount)
 }

@@ -68,12 +68,19 @@ func ConcatRangeTongyiQwQMake(intervals [][]float64) [][]float64 {
 		current := intervals[i]
 		lastMerged := intervalResult[len(intervalResult)-1]
 
-		if lastMerged[1] > current[0] {
-			lastMerged[1] = current[1]
+		if lastMerged[1] >= current[0] {
+			lastMerged[1] = max(current[1], lastMerged[1])
 		} else {
 			intervalResult = append(intervalResult, current)
 		}
 	}
 
 	return intervalResult
+}
+
+func max(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
 }

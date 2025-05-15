@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam4 "task1/exam-4"
+	exam5 "task1/exam-5"
 )
 
 func main() {
@@ -40,7 +40,26 @@ func main() {
 	// fmt.Printf("Doubao-Exam-Str1: %v\n", b3) // true
 	// fmt.Printf("Doubao-Exam-Str2: %v\n", b4) // false
 
-	strs := []string{"flower", "flow", "flight"}
-	res := exam4.FindPublicPrefixSelfMake(strs)
-	fmt.Println(res)
+	// 题目四：查找字符串数组中的最长公共前缀
+	// strs := []string{"flower", "flow", "flight"}
+	// res := exam4.FindPublicPrefixSelfMake(strs)
+	// fmt.Println(res)
+
+	// 题目五：删除排序数组中的重复项
+	nums := []int{1, 2, 2, 3, 4, 5, 5, 6}   // 输入数组
+	expectedNums := []int{1, 2, 3, 4, 5, 6} // 长度正确的期望答案
+	k := exam5.RemoveDuplicates(&nums)      // 调用
+	if k != len(expectedNums) {
+		fmt.Println("唯一元素个数不符合预期")
+		return
+	}
+	for i := 0; i < k; i++ {
+		if nums[i] != expectedNums[i] {
+			fmt.Println("处理后的数组不符合预期")
+			return
+		}
+	}
+	fmt.Printf("%#v\n", nums)
+	fmt.Printf("唯一元素长度：%v", k)
+
 }

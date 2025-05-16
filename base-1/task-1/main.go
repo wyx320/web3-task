@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam8 "task1/exam-8"
+	exam9 "task1/exam-9"
 )
 
 func main() {
@@ -77,8 +77,30 @@ func main() {
 	// fmt.Println(elementCount)
 
 	// 题目八：56. 合并区间
-	var res = exam8.ConcatRangeSelfMake([][]float64{{2, 5}, {1, 3}})
-	fmt.Printf("%#v\n", res)
-	res = exam8.ConcatRangeTongyiQwQMake([][]float64{{2, 5}, {1, 3}})
-	fmt.Printf("%#v", res)
+	// var res = exam8.ConcatRangeSelfMake([][]float64{{2, 5}, {1, 3}})
+	// fmt.Printf("%#v\n", res)
+	// res = exam8.ConcatRangeTongyiQwQMake([][]float64{{2, 5}, {1, 3}})
+	// fmt.Printf("%#v", res)
+
+	// 题目九：两数之和
+	nums := []int{2, 7, 11, 15}
+	target := 9
+	res := exam9.SumTargetSelfMake(nums, target) // [0,1]
+	fmt.Println(res)
+	res = exam9.SumTargetTongyiQwQMake(nums, target) // [0,1]
+	fmt.Println(res)
+
+	nums = []int{3, 2, 4}
+	target = 6
+	res = exam9.SumTargetSelfMake(nums, target) // [1,2]
+	fmt.Println(res)
+	res = exam9.SumTargetTongyiQwQMake(nums, target) // [1,2]
+	fmt.Println(res)
+
+	nums = []int{3, 3}
+	target = 6
+	res = exam9.SumTargetSelfMake(nums, target) // [0,1]
+	fmt.Println(res)
+	res = exam9.SumTargetTongyiQwQMake(nums, target) // [0,1]
+	fmt.Println(res)
 }

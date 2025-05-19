@@ -1,10 +1,5 @@
 package main
 
-import (
-	exam4 "task2/exam-4"
-	"time"
-)
-
 func main() {
 
 	// 题目一
@@ -30,10 +25,21 @@ func main() {
 	// 	exam4.CreateTask("C", time.Second*3),
 	// 	exam4.CreateTask("D", time.Second*4),
 	// })
-	exam4.TaskSceduler([]exam4.Task{
-		exam4.CreateTask("A", time.Second*1),
-		exam4.CreateTask("B", time.Second*2),
-		exam4.CreateTask("C", time.Second*3),
-		exam4.CreateTask("D", time.Second*4),
-	})
+	// exam4.TaskSceduler([]exam4.Task{
+	// 	exam4.CreateTask("A", time.Second*1),
+	// 	exam4.CreateTask("B", time.Second*2),
+	// 	exam4.CreateTask("C", time.Second*3),
+	// 	exam4.CreateTask("D", time.Second*4),
+	// })
+
+	// 题目五
+	// rect := exam5.Rectange{Length: 10, Width: 2}
+	// fmt.Println(rect.Area())      // 20
+	// fmt.Println(rect.Perimeter()) // 24
+	// cir := exam5.Circle{Radius: 5}
+	// fmt.Println(cir.Area())      // 78.54
+	// fmt.Println(cir.Perimeter()) // 31.42
+
+	// 题目六
+
 }

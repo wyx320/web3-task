@@ -1,6 +1,8 @@
 package main
 
-import exam6 "task2/exam-6"
+import (
+	exam7 "task2/exam-7"
+)
 
 func main() {
 
@@ -43,6 +45,13 @@ func main() {
 	// fmt.Println(cir.Perimeter()) // 31.42
 
 	// 题目六
-	emp := exam6.Employee{EmployeeID: 1, Person: exam6.Person{Name: "张三", Age: 18}}
-	emp.PrintInfo()
+	// emp := exam6.Employee{EmployeeID: 1, Person: exam6.Person{Name: "张三", Age: 18}}
+	// emp.PrintInfo()
+
+	// 题目八
+	ch := make(chan int, 10)
+
+	exam7.Producer(ch)
+	exam7.Consumer(ch)
+
 }

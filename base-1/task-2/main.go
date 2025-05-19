@@ -51,7 +51,7 @@ func main() {
 	// 题目八
 	ch := make(chan int, 10)
 
-	exam7.Producer(ch)
+	go exam7.Producer(ch)
 	exam7.Consumer(ch)
 
 }

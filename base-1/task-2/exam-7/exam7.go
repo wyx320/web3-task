@@ -19,7 +19,7 @@ func Producer(ch chan<- int) {
 }
 
 func Consumer(ch <-chan int) {
-	for i := range <-ch {
+	for i := range ch {
 		fmt.Println(i)
 	}
 }

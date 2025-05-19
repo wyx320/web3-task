@@ -39,7 +39,7 @@ import (
 // 	}
 // }
 
-// 熟能生巧
+// 熟能生巧，看完Deepseek生成的答案后，再写一遍。
 
 type Task func() string
 

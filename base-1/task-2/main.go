@@ -1,5 +1,7 @@
 package main
 
+import exam6 "task2/exam-6"
+
 func main() {
 
 	// 题目一
@@ -41,5 +43,6 @@ func main() {
 	// fmt.Println(cir.Perimeter()) // 31.42
 
 	// 题目六
-
+	emp := exam6.Employee{EmployeeID: 1, Person: exam6.Person{Name: "张三", Age: 18}}
+	emp.PrintInfo()
 }

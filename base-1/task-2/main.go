@@ -1,7 +1,7 @@
 package main
 
 import (
-	exam7 "task2/exam-7"
+	exam8 "task2/exam-8"
 )
 
 func main() {
@@ -48,10 +48,13 @@ func main() {
 	// emp := exam6.Employee{EmployeeID: 1, Person: exam6.Person{Name: "张三", Age: 18}}
 	// emp.PrintInfo()
 
+	// 题目七
+	// ch := make(chan int, 10)
+	// go exam7.Producer(ch)
+	// exam7.Consumer(ch)
+
 	// 题目八
-	ch := make(chan int, 10)
-
-	go exam7.Producer(ch)
-	exam7.Consumer(ch)
-
+	ch := make(chan int, 100)
+	go exam8.Producer(ch)
+	exam8.Consumer(ch)
 }

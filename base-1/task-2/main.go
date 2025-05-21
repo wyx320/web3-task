@@ -1,7 +1,8 @@
 package main
 
 import (
-	exam8 "task2/exam-8"
+	"fmt"
+	exam10 "task2/exam-10"
 )
 
 func main() {
@@ -54,7 +55,17 @@ func main() {
 	// exam7.Consumer(ch)
 
 	// 题目八
-	ch := make(chan int, 100)
-	go exam8.Producer(ch)
-	exam8.Consumer(ch)
+	// ch := make(chan int, 100)
+	// go exam8.Producer(ch)
+	// exam8.Consumer(ch)
+
+	// 题目九
+	// count := 0
+	// exam9.IncreaseCounter(&count, 10)
+	// fmt.Println(count)
+
+	// 题目十
+	var count uint64 = 0
+	exam10.IncreaseCounter(&count, 10)
+	fmt.Println(count)
 }

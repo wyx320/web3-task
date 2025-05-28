@@ -32,6 +32,7 @@ func Transfer(fromAccountId uint, toAccountId uint, amount float64) {
 		var fromAccount AccountEntity
 		tx.Take(&fromAccount, fromAccountId)
 		if fromAccount.Balance < amount {
+			// 回滚事务
 			return fmt.Errorf("账户%v余额不足", fromAccountId)
 		}
 
@@ -43,11 +44,13 @@ func Transfer(fromAccountId uint, toAccountId uint, amount float64) {
 		var toAccount AccountEntity
 		tx.Take(&toAccount, toAccountId)
 		if toAccount.Id == 0 {
+			// 回滚事务
 			return fmt.Errorf("账户%v不存在", toAccountId)
 		}
 		toAccount.Balance += amount
 		Db.Save(&toAccount)
 
+		// 提交事务
 		return nil
 	})
 }

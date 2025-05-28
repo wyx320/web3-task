@@ -49,7 +49,6 @@ func Transfer(fromAccountId uint, toAccountId uint, amount float64) {
 		Db.Save(&toAccount)
 
 		return nil
-
 	})
 }
 

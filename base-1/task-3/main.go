@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	exam3 "task3/exam-3"
+	exam5 "task3/exam-5"
 )
 
 func main() {
@@ -38,8 +37,15 @@ func main() {
 	// }
 
 	// 题目三
-	emps := exam3.QueryByDepartment("技术部")
-	fmt.Println(emps)
-	emp := exam3.QueryMaxSalary()
-	fmt.Println(emp)
+	// emps := exam3.QueryByDepartment("技术部")
+	// fmt.Println(emps)
+	// emp := exam3.QueryMaxSalary()
+	// fmt.Println(emp)
+
+	// 题目四
+	// books := exam4.QueryByPrice(50)
+	// fmt.Println(books)
+
+	// 题目五
+	exam5.Test()
 }

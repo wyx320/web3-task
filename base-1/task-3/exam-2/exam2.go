@@ -26,8 +26,8 @@ func CreateAccount(balance float64) *AccountEntity {
 }
 
 // 转账
-func Transfer(fromAccountId uint, toAccountId uint, amount float64) {
-	Db.Transaction(func(tx *gorm.DB) error {
+func Transfer(fromAccountId uint, toAccountId uint, amount float64) error {
+	return Db.Transaction(func(tx *gorm.DB) error {
 		// 查询账户余额
 		var fromAccount AccountEntity
 		tx.Take(&fromAccount, fromAccountId)
@@ -82,9 +82,10 @@ func init() {
 	port := 3306
 	userName := "root"
 	password := "1"
+	dbName := "web3_task3"
 	timeout := "10s"
 
-	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=%s", userName, password, host, port, DbName, timeout)
+	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=%s", userName, password, host, port, dbName, timeout)
 
 	var err error
 	Db, err = gorm.Open(mysql.Open(connStr))
@@ -96,6 +97,9 @@ func init() {
 	// 连接成功
 	fmt.Println(Db)
 
-	// 添加数据表注释
-	Db.Exec("ALTER TABLE accounts COMMENT '账户表'")
+	// // CodeFirst
+	// Db.AutoMigrate(&AccountEntity{}, &TransactionEntity{})
+	// // 添加数据表注释
+	// Db.Exec("ALTER TABLE accounts COMMENT '账户表'")
+	// Db.Exec("ALTER TABLE transactions COMMENT '转账表'")
 }

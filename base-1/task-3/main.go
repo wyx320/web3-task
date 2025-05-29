@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	exam3 "task3/exam-3"
+)
+
 func main() {
 
 	// 题目一：
@@ -33,4 +38,8 @@ func main() {
 	// }
 
 	// 题目三
+	emps := exam3.QueryByDepartment("技术部")
+	fmt.Println(emps)
+	emp := exam3.QueryMaxSalary()
+	fmt.Println(emp)
 }

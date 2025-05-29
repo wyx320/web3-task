@@ -1,7 +1,8 @@
 package main
 
 import (
-	exam5 "task3/exam-5"
+	"fmt"
+	exam6 "task3/exam-6"
 )
 
 func main() {
@@ -47,5 +48,15 @@ func main() {
 	// fmt.Println(books)
 
 	// 题目五
-	exam5.Test()
+	// exam5.Test()
+
+	// 题目六
+	post1 := exam6.GetPostWithCommentByUser(2)
+	fmt.Println(post1)
+	post2, err := exam6.GetPostWithMaxComment()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(*post2)
+	}
 }

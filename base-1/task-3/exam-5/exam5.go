@@ -31,6 +31,8 @@ type PostEntity struct {
 	Title   string `gorm:"column:title"`
 	Content string `gorm:"column:content"`
 	UserID  uint   `gorm:"column:user_id"`
+
+	Comments []CommentEntity `gorm:"foreignKey:PostID"`
 }
 type CommentEntity struct {
 	ID      uint   `gorm:"primaryKey;autoIncrement;column:id"`
@@ -72,9 +74,9 @@ func init() {
 	// 连接成功
 	fmt.Println(Db)
 
-	// 自动迁移表结构
-	Db.AutoMigrate(&UserEntity{}, &PostEntity{}, &CommentEntity{})
-	Db.Exec("ALTER TABLE users COMMENT '用户表'")
-	Db.Exec("ALTER TABLE posts COMMENT '文章表'")
-	Db.Exec("ALTER TABLE comments COMMENT '评论表'")
+	// // 自动迁移表结构
+	// Db.AutoMigrate(&UserEntity{}, &PostEntity{}, &CommentEntity{})
+	// Db.Exec("ALTER TABLE users COMMENT '用户表'")
+	// Db.Exec("ALTER TABLE posts COMMENT '文章表'")
+	// Db.Exec("ALTER TABLE comments COMMENT '评论表'")
 }

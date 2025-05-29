@@ -21,23 +21,23 @@ func Test() {
 }
 
 type UserEntity struct {
-	ID       uint   `gorm:"primaryKey;autoIncrement;column:id"`
+	Id       uint   `gorm:"primaryKey;autoIncrement;column:id"`
 	Username string `gorm:"column:username"`
 	Password string `gorm:"column:password"`
 }
 
 type PostEntity struct {
-	ID      uint   `gorm:"primaryKey;autoIncrement;column:id"`
+	Id      uint   `gorm:"primaryKey;autoIncrement;column:id"`
 	Title   string `gorm:"column:title"`
 	Content string `gorm:"column:content"`
-	UserID  uint   `gorm:"column:user_id"`
+	UserId  uint   `gorm:"column:user_id"`
 
-	Comments []CommentEntity `gorm:"foreignKey:PostID"`
+	Comments []CommentEntity `gorm:"foreignKey:PostId"`
 }
 type CommentEntity struct {
-	ID      uint   `gorm:"primaryKey;autoIncrement;column:id"`
+	Id      uint   `gorm:"primaryKey;autoIncrement;column:id"`
 	Content string `gorm:"column:content"`
-	PostID  uint   `gorm:"column:post_id"`
+	PostId  uint   `gorm:"column:post_id"`
 }
 
 func (UserEntity) TableName() string {

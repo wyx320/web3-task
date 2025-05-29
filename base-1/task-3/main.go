@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	exam6 "task3/exam-6"
+	exam7 "task3/exam-7"
 )
 
 func main() {
@@ -51,12 +51,53 @@ func main() {
 	// exam5.Test()
 
 	// 题目六
-	post1 := exam6.GetPostWithCommentByUser(2)
-	fmt.Println(post1)
-	post2, err := exam6.GetPostWithMaxComment()
+	// post1 := exam6.GetPostWithCommentByUser(2)
+	// fmt.Println(post1)
+	// post2, err := exam6.GetPostWithMaxComment()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println(*post2)
+	// }
+
+	// 题目七
+	post := exam7.PostEntity{
+		Title:   "标题1",
+		Content: "内容1",
+		UserId:  2,
+	}
+
+	err := exam7.CreatePost(&post)
 	if err != nil {
 		fmt.Println(err)
-	} else {
-		fmt.Println(*post2)
+	}
+
+	comment1 := exam7.CommentEntity{
+		Content: "评论1",
+		PostId:  post.Id,
+		UserId:  2,
+	}
+	comment2 := exam7.CommentEntity{
+		Content: "评论2",
+		PostId:  post.Id,
+		UserId:  3,
+	}
+
+	err = exam7.AddComment(&comment1)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = exam7.AddComment(&comment2)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = exam7.DeleteComment(&comment1)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = exam7.DeleteComment(&comment2)
+	if err != nil {
+		fmt.Println(err)
 	}
 }

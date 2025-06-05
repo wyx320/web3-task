@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"task4/shared/config"
+	appresult "task4/shared/kernel/result"
 	"task4/user/core/entities"
 	"task4/user/httpapi/models"
 	"task4/user/infrastructure/data"
@@ -13,11 +15,14 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 )
 
 type UserController struct {
 	// 依赖接口
 	dataDb data.Database
+
+	logger *zap.Logger
 }
 
 // 显示初始化
@@ -28,10 +33,7 @@ func NewUserController(db data.Database) *UserController {
 func (u *UserController) Register(c *gin.Context) {
 	var dto models.AuthForRegisterDto
 	if err := c.ShouldBind(&dto); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 400,
-			"msg":  "参数错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.BadRequestError)
 		return
 	}
 
@@ -41,38 +43,26 @@ func (u *UserController) Register(c *gin.Context) {
 	var err error
 	user.Salt, err = tools.Md5EncodingOnly(user.Username)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 		return
 	}
 
 	user.Password, err = tools.Md5EncodingWithSalt(user.Password, user.Salt)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 		return
 	}
 
 	// 截止到这步 该去依赖注入生成一个Db 并在main的init做CodeFirst 再回来这里做下面的CRUD操作
 
 	if u.dataDb == nil || u.dataDb.GetDb() == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "数据库连接失败",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError.WriteDetail("数据库连接失败"))
 		return
 	}
 
 	err = u.dataDb.GetDb().Create(&user).Error
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 		return
 	}
 }
@@ -92,71 +82,46 @@ func (u *UserController) Login(c *gin.Context) {
 
 	salt, err := tools.Md5EncodingOnly(dto.Username)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 		return
 	}
 
 	if u.dataDb == nil || u.dataDb.GetDb() == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "数据库连接失败",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError.WriteDetail("数据库连接失败"))
 		return
 	}
 
 	var user entities.UserEntity
 	if err = u.dataDb.GetDb().Where("username=?", dto.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 		return
 	}
 
 	if user.Id == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "用户名或密码错误",
-		})
+		appresult.ErrorResponse(c, u.logger, appresult.BadRequestError.WriteDetail("用户名或密码错误"))
 		return
 	}
 
 	password := dto.Password
 	if password, err = tools.Md5EncodingWithSalt(password, salt); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "系统错误",
-		})
-	}
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
 
-	if password != user.Password {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "用户名或密码错误",
-		})
-		return
-	}
+		if password != user.Password {
+			appresult.ErrorResponse(c, u.logger, appresult.BadRequestError.WriteDetail("用户名或密码错误"))
+			return
+		}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":       user.Id,
-		"usewrname": user.Username,
-		"exp":       time.Now().Add(time.Hour * 8).Unix(),
-	})
-	var tokenString string
-	if tokenString, err = token.SignedString([]byte("jx9KdLm3sQwRtP5BvG8XzY2NcF6EaH0")); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "JWT签名失败",
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"sub":       user.Id,
+			"usewrname": user.Username,
+			"exp":       time.Now().Add(time.Hour * 8).Unix(),
 		})
-		return
-	}
+		var tokenString string
+		if tokenString, err = token.SignedString([]byte(config.SecretKey)); err != nil {
+			appresult.ErrorResponse(c, u.logger, appresult.InternalServerError.WriteDetail("JWT签名失败"))
+			return
+		}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":        200,
-		"msg":         "登录成功",
-		"accessToken": tokenString,
-	})
+		appresult.SuccessResponse(c, u.logger, map[string]string{"accessToken": tokenString})
+	}
 }

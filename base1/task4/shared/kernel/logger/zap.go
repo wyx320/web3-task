@@ -17,7 +17,7 @@ func NewLogger() (*zap.Logger, *appresult.AppError) {
 
 	// 设置输出路径
 	config.OutputPaths = []string{"stdout", "logs/app.log"}
-	config.ErrorOutputPaths = []string{"stderr", "logs/app.log"}
+	config.ErrorOutputPaths = []string{"stderr", "logs/apperror.log"}
 
 	logger, err := config.Build()
 	if err != nil {

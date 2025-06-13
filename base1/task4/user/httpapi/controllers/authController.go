@@ -26,8 +26,11 @@ type UserController struct {
 }
 
 // 显示初始化
-func NewUserController(db data.Database) *UserController {
-	return &UserController{dataDb: db}
+func NewUserController(db data.Database, logger *zap.Logger) *UserController {
+	return &UserController{
+		dataDb: db,
+		logger: logger,
+	}
 }
 
 func (u *UserController) Register(c *gin.Context) {
@@ -78,7 +81,7 @@ func (u *UserController) Test(c *gin.Context) {
 
 func (u *UserController) Login(c *gin.Context) {
 	var dto models.AuthForLoginDto
-	c.ShouldBind(&dto)
+	c.BindJSON(&dto)
 
 	salt, err := tools.Md5EncodingOnly(dto.Username)
 	if err != nil {
@@ -105,23 +108,24 @@ func (u *UserController) Login(c *gin.Context) {
 	password := dto.Password
 	if password, err = tools.Md5EncodingWithSalt(password, salt); err != nil {
 		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError)
-
-		if password != user.Password {
-			appresult.ErrorResponse(c, u.logger, appresult.BadRequestError.WriteDetail("用户名或密码错误"))
-			return
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"sub":       user.Id,
-			"usewrname": user.Username,
-			"exp":       time.Now().Add(time.Hour * 8).Unix(),
-		})
-		var tokenString string
-		if tokenString, err = token.SignedString([]byte(config.SecretKey)); err != nil {
-			appresult.ErrorResponse(c, u.logger, appresult.InternalServerError.WriteDetail("JWT签名失败"))
-			return
-		}
-
-		appresult.SuccessResponse(c, u.logger, map[string]string{"accessToken": tokenString})
+		return
 	}
+
+	if password != user.Password {
+		appresult.ErrorResponse(c, u.logger, appresult.BadRequestError.WriteDetail("用户名或密码错误"))
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":       user.Id,
+		"usewrname": user.Username,
+		"exp":       time.Now().Add(time.Hour * 8).Unix(),
+	})
+	var tokenString string
+	if tokenString, err = token.SignedString([]byte(config.SecretKey)); err != nil {
+		appresult.ErrorResponse(c, u.logger, appresult.InternalServerError.WriteDetail("JWT签名失败"))
+		return
+	}
+
+	appresult.SuccessResponse(c, u.logger, map[string]string{"accessToken": tokenString})
 }

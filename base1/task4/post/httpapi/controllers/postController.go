@@ -18,6 +18,13 @@ type PostController struct {
 	logger *zap.Logger
 }
 
+func NewPostController(db data.Database, logger *zap.Logger) *PostController {
+	return &PostController{
+		data:   db,
+		logger: logger,
+	}
+}
+
 // 创建文章
 func (p *PostController) Create(c *gin.Context) {
 	var dto models.PostForCreateDto

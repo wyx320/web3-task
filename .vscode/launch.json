@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceRoot}/base-1/task-3",
+            "program": "${workspaceRoot}/base1/task4",
         }
     ]
 }

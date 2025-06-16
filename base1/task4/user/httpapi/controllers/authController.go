@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"task4/shared/config"
@@ -117,7 +118,7 @@ func (u *UserController) Login(c *gin.Context) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":       user.Id,
+		"sub":       strconv.FormatUint(user.Id, 10),
 		"usewrname": user.Username,
 		"exp":       time.Now().Add(time.Hour * 8).Unix(),
 	})

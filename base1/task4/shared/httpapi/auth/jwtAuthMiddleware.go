@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"task4/shared/config"
 	appresult "task4/shared/kernel/result"
@@ -49,7 +50,15 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.Subject)
+		var userId uint64
+		userId, err = strconv.ParseUint(claims.Subject, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, appresult.InvalidTokenError.WriteDetail("Token expired"))
+			c.Abort()
+			return
+		}
+
+		c.Set("user_id", userId)
 		c.Next()
 	}
 }

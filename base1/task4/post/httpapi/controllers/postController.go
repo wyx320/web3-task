@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"strconv"
 	"task4/post/core/entities"
 	models "task4/post/httpapi/models/post"
 	appresult "task4/shared/kernel/result"
@@ -48,7 +49,11 @@ func (p *PostController) Create(c *gin.Context) {
 	post.CreateBy = userId
 
 	db := p.data.GetDb()
-	db.Create(&post)
+	err := db.Create(&post).Error
+	if err != nil {
+		appresult.ErrorResponse(c, p.logger, appresult.InternalServerError.WriteDetail("fail to add post"))
+		return
+	}
 
 	appresult.SuccessResponse(c, p.logger, &post)
 }
@@ -56,8 +61,21 @@ func (p *PostController) Create(c *gin.Context) {
 // 更新文章
 func (p *PostController) Update(c *gin.Context) {
 	var dto models.PostForUpdateDto
-	if err := c.ShouldBind(&dto); err != nil {
+	if err := c.Bind(&dto); err != nil {
 		appresult.ErrorResponse(c, p.logger, appresult.BadRequestError)
+		return
+	}
+
+	// id, exists := c.Get("id")
+	// if !exists {
+	// 	appresult.ErrorResponse(c, p.logger, appresult.BadRequestError.WriteDetail("文章Id参数缺失"))
+	// 	return
+	// }
+	id := c.Param("id")
+	var err error
+	dto.Id, err = strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		appresult.ErrorResponse(c, p.logger, appresult.BadRequestError.WriteDetail("文章Id参数缺失"))
 		return
 	}
 
@@ -84,8 +102,9 @@ func (p *PostController) Update(c *gin.Context) {
 
 	copier.Copy(&post, &dto)
 
-	post.UpdateBy = userId
-	post.UpdateAt = time.Now()
+	timeNow := time.Now()
+	post.UpdateBy = &userId
+	post.UpdateAt = &timeNow
 
 	db.Model(&post).Updates(&post)
 
@@ -112,7 +131,7 @@ func (p *PostController) Get(c *gin.Context) {
 func (p *PostController) GetList(c *gin.Context) {
 	db := p.data.GetDb()
 	var posts []entities.PostEntity
-	db.Find(&posts)
+	db.Where("is_deleted = 0").Find(&posts)
 	var dtos []models.PostDto
 	copier.Copy(&dtos, &posts)
 
@@ -142,6 +161,11 @@ func (p *PostController) Delete(c *gin.Context) {
 		return
 	}
 
+	timeNow := time.Now()
+
 	post.IsDeleted = true
+	post.DeleteBy = &userId
+	post.DeleteAt = &timeNow
+
 	db.Model(&post).Updates(&post)
 }

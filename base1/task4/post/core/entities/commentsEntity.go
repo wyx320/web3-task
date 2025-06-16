@@ -9,12 +9,13 @@ type CommentEntity struct {
 	UserId  uint64
 	PostId  uint64
 
-	CreateAt time.Time
-	UpdateAt time.Time
-	DeleteAt time.Time
-	CreateBy uint64
-	UpdateBy uint64
-	DeleteBy uint64
+	CreateAt  time.Time
+	UpdateAt  *time.Time
+	DeleteAt  *time.Time
+	CreateBy  uint64
+	UpdateBy  *uint64
+	DeleteBy  *uint64
+	IsDeleted bool
 }
 
 func (CommentEntity) TableName() string {

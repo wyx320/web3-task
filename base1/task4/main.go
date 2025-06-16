@@ -44,17 +44,21 @@ func main() {
 	// 初始化控制器
 	userCtl := userControllers.NewUserController(dbContext, logger)
 	postCtl := postControllers.NewPostController(dbContext, logger)
+	commentCtl := postControllers.NewCommentController(dbContext, logger)
 	// v1 绑定路由
 	v1.GET("/auth", userCtl.Test)
 
-	v1.GET("/post", postCtl.GetList)
-	v1.GET("/post/:id", postCtl.Get)
-	v1.POST("/post", postCtl.Create)
-	v1.PUT("/post/:id", postCtl.Update)
-	v1.DELETE("/post/:id", postCtl.Delete)
+	postGroup := v1.Group("/post")
+	{
+		postGroup.GET("", postCtl.GetList)
+		postGroup.GET("/:id", postCtl.Get)
+		postGroup.POST("", postCtl.Create)
+		postGroup.PUT("/:id", postCtl.Update)
+		postGroup.DELETE("/:id", postCtl.Delete)
 
-	v1.GET("/comment", postCtl.GetList)
-	v1.POST("/comment", postCtl.Create)
+		postGroup.GET("/:id/comment", commentCtl.GetList)
+		postGroup.POST("/:id/comment", commentCtl.Create)
+	}
 
 	// 默认路由
 	r.POST("/auth/register", userCtl.Register)

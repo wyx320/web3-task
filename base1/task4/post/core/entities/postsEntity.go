@@ -11,11 +11,11 @@ type PostEntity struct {
 	IsDeleted bool
 
 	CreateAt time.Time
-	UpdateAt time.Time
-	DeleteAt time.Time
+	UpdateAt *time.Time
+	DeleteAt *time.Time
 	CreateBy uint64
-	UpdateBy uint64
-	DeleteBy uint64
+	UpdateBy *uint64
+	DeleteBy *uint64
 }
 
 func (PostEntity) TableName() string {

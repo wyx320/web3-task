@@ -1,0 +1,10 @@
+{
+    "name": "My Awesome NFT",
+    "description": "This is a test NFT created by me.",
+    "image": "ipfs://bafybeibggbooitt42yb7lsycoypz6ppe77ocqmzae4brdc52wpw32avnvy",
+    "attributes": [
+      { "trait_type": "Background", "value": "Blue" },
+      { "trait_type": "Character", "value": "Robot" },
+      { "trait_type": "Accessary", "value": "Sunglasses" }
+    ]
+  }

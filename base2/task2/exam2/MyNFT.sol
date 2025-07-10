@@ -22,6 +22,8 @@ contract MyNFT is ERC721URIStorage {
 
         return currentId;
     }
+    
+    // 使用 RemixIDE 部署
 
     // 图片 CID
     // bafybeibggbooitt42yb7lsycoypz6ppe77ocqmzae4brdc52wpw32avnvy

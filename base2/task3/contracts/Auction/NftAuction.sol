@@ -5,25 +5,16 @@ pragma solidity ^0.8;
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 // ERC20 - MODIFIED: Using upgradeable interface
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 // // Ownable
 // import "@openzeppelin/contracts/access/Ownable.sol";
-// Ownable Upggradeable
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-// UUPS Upgradeable
-// import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+// UUPS
+// import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";    // 包不能导入错了
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-// ERC721 - MODIFIED: Using upgradeable interface
+// ERC721
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-// import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-// import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-
-contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC721Receiver   {
+contract NftAuction is UUPSUpgradeable, OwnableUpgradeable   {
     struct Auction {
         // 拍卖人
         address seller;
@@ -52,15 +43,6 @@ contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC7
     // 存储拍卖ID
     uint256 public nextAuctionId;
 
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
     // 创建拍卖
     function createAuction(uint256 _duration, uint256 _tokenId, uint256 _startPrice, address _nftContract) public {
         require(_nftContract != address(0), "nft contract address is zero");
@@ -86,9 +68,6 @@ contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC7
         });
         nextAuctionId++;
     }    
-    // function createAuction(uint256 _duration, uint256 _tokenId, uint256 _startPrice, address _nftContract) public returns (address) {
-    //     return _nftContract;
-    // }
 
     // 初始化
     // constructor() Owner(msg.sender) {}   // 合约部署后 构造函数只会执行一次 UUPS可升级合约要求可进行多次部署
@@ -114,12 +93,10 @@ contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC7
         if(_paymentTokenAddress == address(0)){
             // ETH 方式出价
             amount = msg.value;
-
             payValue = amount * getChainlinkDataFeedLatestAnswer(address(0));
         }
         else {
             // ERC20 方式出价
-
             payValue = amount * getChainlinkDataFeedLatestAnswer(_paymentTokenAddress);
         }
 
@@ -128,7 +105,6 @@ contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC7
 
         
         require(payValue >= _startPrice && payValue > _highestBid, "bid must be greater than the current highest bid");
-        // require(payValue >= _startPrice && payValue > _highestBid, string(abi.encodePacked("bid must be greater than the current highest bid.\n value=",Strings.toString(_highestBid))));
 
         // 转移 ERC20 到合约
         if(_paymentTokenAddress != address(0)){
@@ -178,9 +154,6 @@ contract NftAuction is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC7
         ) = priceFeed.latestRoundData();
         return uint256(answer);
     }
-
-    // 关键：使用 using 声明
-    // using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 结束拍卖
     function endAuction(uint256 auctionId) external {

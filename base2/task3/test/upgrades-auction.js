@@ -62,8 +62,6 @@ describe("Test Auction Upgrade", async () => {
             value: ethers.parseEther("0.01"),
         })
         console.log("===1===");
-        // console.log(await auction.auctions(0));
-        // console.log(await auction.auctions(1));
         // 等待拍卖结束
         await new Promise((resolve) => setTimeout(resolve, 11000));
         console.log("===2===");
@@ -85,7 +83,6 @@ describe("Test Auction Upgrade", async () => {
             "NftAuctionV2",
             proxy.address
           );
-        // console.log("===auctionV2===", await auctionV2.getAddress());
         // 测试 V2 合约功能
         await auctionV2.setValue("Hello");
         expect(await auctionV2.getValue()).to.equal("Hello");

@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceRoot}/base1/task4",
+            "program": "${workspaceRoot}/3-adv1-goethereum/task1/exam2",
         }
     ]
 }

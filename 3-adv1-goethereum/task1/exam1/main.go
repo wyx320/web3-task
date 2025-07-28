@@ -15,7 +15,7 @@ import (
 
 func main() {
 	// 连接到 Sepolia 测试网络
-	client, err := ethclient.Dial("https://sepolia.infura.io/v3/e48f7acfd92045759d9243f878973e8a")
+	client, err := ethclient.Dial("https://sepolia.infura.io/v3/<-- Your Infura Project ID Here -->")
 	if err != nil {
 		log.Fatal("Failed to connect to the Ethereum client:", err)
 	}
@@ -28,6 +28,7 @@ func main() {
 	// }
 	// fmt.Printf("Connected to chain ID: %d", chainID)
 
+	// 开始打印区块信息
 	fmt.Println("===================== Block Information ====================")
 
 	blockNumber := big.NewInt(5671744)
@@ -53,9 +54,10 @@ func main() {
 	}
 	fmt.Println("Block Number by Hash:", block.Number().Uint64())
 
+	// 开始打印账号信息
 	fmt.Println("===================== Account Information ====================")
 
-	privateKey, err := crypto.HexToECDSA("92c4ef37898a9f64b32e1fd5868a946c81202d15788113175d7fcbb43aacbd8c")
+	privateKey, err := crypto.HexToECDSA("<-- Your PrivateKeyHere -->")
 	if err != nil {
 		log.Fatal("Failed to parse private key:", err)
 	}
@@ -68,6 +70,7 @@ func main() {
 	address := crypto.PubkeyToAddress(*publicKeyECDSA)
 	fmt.Println("Address:", address.Hex())
 
+	// 开始打印交易信息
 	fmt.Println("====================== Transaction Information ====================")
 
 	// 接收方地址

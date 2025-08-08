@@ -9,12 +9,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 // 数学工具
 import "@openzeppelin/contracts/utils/math/Math.sol";
+// ERC20 代币
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MetaNodeStake is
     Initializable,
     UUPSUpgradeable,
     AccessControlUpgradeable
 {
+    using Math for uint256;
+    using SafeERC20 for IERC20;
+
     // 定义权限
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant UPGRADE_ROLE = keccak256("UPGRADE_ROLE");
@@ -48,7 +54,7 @@ contract MetaNodeStake is
         // Last block number that MetaNode token distribution occurs for pool 最后一次计算奖励的区块号
         uint256 lastRewardBlock;
         // Accumulated MetaNode tokens for per staking token of pool 每个质押代币累积的 RCC 数量
-        uint256 accMetaNodePerST;
+        uint256 accMetaNodePerSt;
         // Staking token amount 质押池中的总质押代币量
         uint256 stTokenAmount;
         // Min staking amount 最小质押金额
@@ -60,7 +66,7 @@ contract MetaNodeStake is
     // *************************************** STAKE VERIABLES ***************************************
 
     // 质押池
-    StakePool[] public pool;
+    StakePool[] public pools;
     // 质押池总权重
     uint256 totalPoolWeight;
 
@@ -75,7 +81,9 @@ contract MetaNodeStake is
     bool public claimPaused;
 
     // pool id => user address => user info
-    mapping(uint256 => mapping(address => User)) public users;
+
+    // MetaNode token
+    IERC20 public metaNode;
 
     // *************************************** Events ***************************************
 
@@ -87,32 +95,55 @@ contract MetaNodeStake is
 
     event UnpauseClaim();
 
-    event SetStartBlock(uint256 startBlock);
+    event SetStartBlock(uint256 indexed startBlock);
 
-    event SetEndBlock(uint256 endBlock);
+    event SetEndBlock(uint256 indexed endBlock);
 
-    event SetMetaNodePerBlock(uint256 metaNodePerBlock);
+    event SetMetaNodePerBlock(uint256 indexed metaNodePerBlock);
 
     event AddPool(
-        address stTokenAddress,
-        uint256 poolWeight,
-        uint256 lastRewardBlock,
+        address indexed stTokenAddress,
+        uint256 indexed poolWeight,
+        uint256 indexed lastRewardBlock,
         uint256 minDepositAmount,
         uint256 unstakeLockedBlocks
+    );
+
+    event UpdatePool(
+        uint256 indexed pid,
+        uint256 indexed lastRewardBlock,
+        uint256 newTotalRewards
+    );
+
+    event SetMetaNode(IERC20 indexed metaNode);
+
+    event UpdatePoolInfo(
+        uint256 indexed pid,
+        uint256 indexed minDepositAmount,
+        uint256 indexed unstakeLockedBlocks
+    );
+
+    event UpdatePoolWeight(
+        uint256 indexed pid,
+        uint256 indexed poolWeight,
+        uint256 totalPoolWeight
     );
 
     // *************************************** MODIFIER ***************************************
 
     modifier checkPid(uint256 _pid) {
-        require(_pid < pool.length, "Invalid pool id");
+        require(_pid < pools.length, "Invalid pool id");
         _;
     }
 
-    // 合约初始化
+    /*
+     * @notice Initialize MetaNodeStake 合约初始化
+     */
     function initialize(
         uint256 _startBlock,
         uint256 _endBlock,
-        uint256 _metaNodePerBlock
+        uint256 _metaNodePerBlock,
+        IERC20 _metaNode
     ) public initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -121,12 +152,16 @@ contract MetaNodeStake is
         _grantRole(ADMIN_ROLE, msg.sender);
         _grantRole(UPGRADE_ROLE, msg.sender);
 
+        setMetaNode(_metaNode);
+
         startBlock = _startBlock;
         endBlock = _endBlock;
         metaNodePerBlock = _metaNodePerBlock;
     }
 
-    // 合约升级自定义授权逻辑
+    /*
+     * @notice Authorize upgrade 合约升级自定义授权逻辑
+     */
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADE_ROLE) {}
@@ -230,10 +265,10 @@ contract MetaNodeStake is
         uint256 _poolWeight,
         uint256 _minDepositAmount,
         uint256 _unstakeLockedBlocks,
-        bool _massUpdatePools
+        bool _massUpdatePoolsRewards
     ) public onlyRole(ADMIN_ROLE) {
         // Default the first pool to be ETH pool. so the first pool must be added with stTokenAddress = address(0x00)
-        if (pool.length == 0) {
+        if (pools.length == 0) {
             require(_stTokenAddress == address(0), "First pool must be ETH");
         } else {
             require(_stTokenAddress != address(0), "Pool must be token");
@@ -247,19 +282,21 @@ contract MetaNodeStake is
         );
         require(endBlock > block.timestamp, "End block must be in the future");
 
-        if (_massUpdatePools) {}
+        if (_massUpdatePoolsRewards) {
+            massUpdatePoolsRewards();
+        }
 
         uint256 lastRewardBlock = block.number > startBlock
             ? block.number
             : startBlock;
         totalPoolWeight += _poolWeight;
 
-        pool.push(
+        pools.push(
             StakePool({
                 stTokenAddress: _stTokenAddress,
                 poolWeight: _poolWeight,
                 lastRewardBlock: lastRewardBlock,
-                accMetaNodePerST: 0,
+                accMetaNodePerSt: 0,
                 stTokenAmount: 0,
                 minDepositAmount: _minDepositAmount,
                 unstakeLockedBlocks: _unstakeLockedBlocks
@@ -275,22 +312,201 @@ contract MetaNodeStake is
         );
     }
 
-    // *************************************** PUBLISH FUNCTION ***************************************
+    /**
+     * @notice Set MetaNode token address. Can only be called by admin
+     */
+    function setMetaNode(IERC20 _metaNode) public onlyRole(ADMIN_ROLE) {
+        metaNode = _metaNode;
+
+        emit SetMetaNode(_metaNode);
+    }
+
+    /**
+     * @notice Update pool info. Can only be called by admin
+     */
+    function updatePoolInfo(
+        uint256 _pid,
+        uint256 _minDepositAmount,
+        uint256 _unstakeLockedBlocks
+    ) public onlyRole(ADMIN_ROLE) checkPid(_pid) {
+        pools[_pid].minDepositAmount = _minDepositAmount;
+        pools[_pid].unstakeLockedBlocks = _unstakeLockedBlocks;
+
+        emit UpdatePoolInfo(_pid, _minDepositAmount, _unstakeLockedBlocks);
+    }
+
+    /**
+     * @notice Update pool weight. Can only be called by admin
+     */
+    function updatePoolWeight(
+        uint256 _pid,
+        uint256 _poolWeight,
+        bool _massUpdatePoolsRewards
+    ) public onlyRole(ADMIN_ROLE) checkPid(_pid) {
+        require(_poolWeight > 0, "invalid pool weight");
+
+        if (_massUpdatePoolsRewards) {
+            massUpdatePoolsRewards();
+        }
+
+        totalPoolWeight =
+            totalPoolWeight -
+            pools[_pid].poolWeight +
+            _poolWeight;
+        pools[_pid].poolWeight = _poolWeight;
+
+        emit UpdatePoolWeight(_pid, _poolWeight, totalPoolWeight);
+    }
+
+    // *************************************** PUBLIC FUNCTION ***************************************
 
     /**
      * @notice Update reward variables for all pools. Be careful of gas spending!
      */
-    function massUpdatePools() public {
-        uint256 length = pool.length;
+    function massUpdatePoolsRewards() public {
+        uint256 length = pools.length;
         for (uint256 pid = 0; pid < length; pid++) {
-            updatePool(pid);
+            updatePoolRewards(pid);
         }
     }
 
     /**
      * @notice Update reward variables of the given pool to be up-to-date. 更新给定池的奖励变量，使其保持最新。
      */
-    function updatePool(uint256 _pid) public checkPid(_pid) {
+    function updatePoolRewards(uint256 _pid) public checkPid(_pid) {
+        StakePool storage pool = pools[_pid];
 
+        if (block.number <= pool.lastRewardBlock) {
+            return;
+        }
+
+        (bool success1, uint256 newTotalRewards) = getRewardsByBolcks(
+            pool.lastRewardBlock,
+            block.number
+        ).tryMul(pool.poolWeight);
+        require(success1, "overflow");
+
+        (success1, newTotalRewards) = newTotalRewards.tryDiv(totalPoolWeight);
+        require(success1, "overflow");
+
+        if (pool.stTokenAmount > 0) {
+            (bool success2, uint256 metaNodePerSt) = newTotalRewards.tryMul(
+                1 ether
+            );
+            require(success2, "overflow");
+
+            (success2, metaNodePerBlock) = metaNodePerSt.tryDiv(
+                pool.stTokenAmount
+            );
+            require(success2, "overflow");
+
+            (bool success3, uint256 accMetaNodePerSt) = metaNodePerBlock.tryAdd(
+                pool.accMetaNodePerSt
+            );
+            require(success3, "overflow");
+
+            pool.accMetaNodePerSt = accMetaNodePerSt;
+        }
+
+        pool.lastRewardBlock = block.number;
+
+        emit UpdatePool(_pid, pool.lastRewardBlock, newTotalRewards);
+    }
+
+    // *************************************** QUERY FUNCTION ***************************************
+
+    /**
+     * @notice Get MetaNode rewards by given block range. 获取指定区块区间的挖矿奖励
+     */
+    function getRewardsByBolcks(
+        uint256 _from,
+        uint256 _to
+    ) public view returns (uint256) {
+        if (_from < startBlock) {
+            _from = startBlock;
+        }
+        if (_to > endBlock) {
+            _to = endBlock;
+        }
+        require(_from < _to, "Start block must be less than end block");
+
+        (bool success, uint256 rewards) = (_to - _from).tryMul(
+            metaNodePerBlock
+        );
+        require(success, "multiply overflow");
+        return rewards;
+    }
+
+    /**
+     * @notice Get the length/number of pool. 获取池的长度/数量
+     */
+    function pollLength() public view returns (uint256) {
+        return pools.length;
+    }
+
+    /**
+     * @notice Get pending MetaNode amount of user in pool
+     */
+    function pendingMetaNode(
+        uint256 _pid,
+        address _user
+    ) public view checkPid(_pid) returns (uint256) {
+        return pendingMetaNodeByBlockNumber(_pid, _user, block.number);
+    }
+
+    /**
+     * @notice Get pending MetaNode amount of user by block number in pool
+     */
+    function pendingMetaNodeByBlockNumber(
+        uint256 _pid,
+        address _user,
+        uint256 blockNumber
+    ) public view checkPid(_pid) returns (uint256) {
+        Pool pool = pools[_pid];
+        User user = users[_pid][_user];
+
+        uint256 accMetaNodePerSt = pool.accMetaNodePerSt;
+
+        if (block.number > pool.lastRewardBlock && pool.stTokenAmount > 0) {
+            // 当前区块高度大于池最后结算区块高度。
+            // 此时必须先计算， 从最后奖励区块高度到当前区块高度的奖励， pool.accMetaNodePerSt 才准确。
+            (bool success, uint256 rewards) = getRewardsByBolcks(
+                pool.lastRewardBlock,
+                block.number
+            ).tryMul(pool.poolWeight);
+            require(success, "multiply overflow");
+
+            (success, rewards) = rewards.tryDiv(totalPoolWeight);
+            require(success, "divide overflow");
+
+            accMetaNodePerSt = accMetaNodePerSt + rewards * (1 ether) / pool.stTokenAmount;
+        }
+
+        return
+            (user.stAmount * accMetaNodePerSt) /
+            1 ether -
+            finishedMetaNode +
+            user.pendingMetaNode;
+    }
+
+    /**
+     * @notice Get the staking amount of user
+     */
+    function stakingBalance(uint256 _pid, address _user) public view checkPid(_pid) returns (uint256) {
+        return users[_pid][_user].stAmount;
+    }
+
+    /**
+     * @notice Get the withdraw amount info, including the locked unstake amount and the unlocked unstake amount
+     */
+    function withdrawAmount(uint256 _pid, address _user) public view checkPid(_pid) returns (uint256 requestAmount, uint256 pendingWithdrawAmount) {
+        User user = pools[_pid][_user];
+        
+        for (uint256 index = 0; index < user.requests.length; index++) {
+            if(user.requests[index].unlockBlock > block.number) {
+                pendingWithdrawAmount += user.requests[index].amount;
+            }
+            requestAmount += user.requests[index].amount;
+        }
     }
 }

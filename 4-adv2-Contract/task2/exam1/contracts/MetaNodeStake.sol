@@ -21,9 +21,14 @@ contract MetaNodeStake is
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    // 定义权限
+    // **************************************** INVARIANT ***************************************
+
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant UPGRADE_ROLE = keccak256("UPGRADE_ROLE");
+
+    uint256 ETH_PID = 0;
+
+    // *************************************** DATA STRUCTS ***************************************
 
     // 解质押请求结构体
     struct UnstakeRequest {
@@ -37,10 +42,10 @@ contract MetaNodeStake is
     struct User {
         // Staking token amount that user provided 用户质押的代币数量
         uint256 stAmount;
-        // Finished distrubution MetaNode tokens to user 已领取的 MetaNode 数量
-        uint256 finishedMetaNode;
-        // Pending to claim MetaNode tokens 待领取的 MetaNode 数量
-        uint256 pendingMetaNode;
+        // Finished distrubution MetaNode tokens to user 已完成向用户分发奖励 MetaNode 数量 （用户应得但尚未领取的奖励的起点）
+        uint256 finiDistMetaNode;
+        // Pending to claim MetaNode tokens 用户尚未领取的奖励 MetaNode 数量
+        uint256 pendToClaimMetaNodeAfterUpdatePoolRewards;
         // Withdraw request list 解质押请求列表
         UnstakeRequest[] requests;
     }
@@ -81,6 +86,7 @@ contract MetaNodeStake is
     bool public claimPaused;
 
     // pool id => user address => user info
+    mapping(uint256 => mapping(address => User)) users;
 
     // MetaNode token
     IERC20 public metaNode;
@@ -129,10 +135,17 @@ contract MetaNodeStake is
         uint256 totalPoolWeight
     );
 
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+
     // *************************************** MODIFIER ***************************************
 
     modifier checkPid(uint256 _pid) {
         require(_pid < pools.length, "Invalid pool id");
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!withdrawPaused, "Withdraw is paused");
         _;
     }
 
@@ -413,6 +426,33 @@ contract MetaNodeStake is
         emit UpdatePool(_pid, pool.lastRewardBlock, newTotalRewards);
     }
 
+    function depositETH() public payable {
+        require(msg.value > 0, "Deposit amount must be greater than 0");
+        StakePool storage ethPool = pools[ETH_PID];
+        require(
+            ethPool.stTokenAddress == address(0),
+            "ETH staking token address"
+        );
+
+        _deposit(ETH_PID, msg.value);
+    }
+
+    function deposit(uint256 _pid, uint256 _amount) public checkPid(_pid) {
+        require(_pid != 0, "Deposit to ETH pool must use depositETH");
+        require(_amount > 0, "Deposit amount must be greater than 0");
+
+        StakePool storage pool = pools[_pid];
+        require(pool.minDepositAmount <= _amount, "Deposit amount is less than min deposit amount");
+
+        IERC20(pool.stTokenAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+
+        _deposit(_pid, _amount);
+    }
+
     // *************************************** QUERY FUNCTION ***************************************
 
     /**
@@ -447,66 +487,139 @@ contract MetaNodeStake is
     /**
      * @notice Get pending MetaNode amount of user in pool
      */
-    function pendingMetaNode(
+    function getPendingMetaNode(
         uint256 _pid,
         address _user
     ) public view checkPid(_pid) returns (uint256) {
-        return pendingMetaNodeByBlockNumber(_pid, _user, block.number);
+        return getPendingMetaNodeByBlockNumber(_pid, _user, block.number);
     }
 
     /**
      * @notice Get pending MetaNode amount of user by block number in pool
      */
-    function pendingMetaNodeByBlockNumber(
+    function getPendingMetaNodeByBlockNumber(
         uint256 _pid,
         address _user,
-        uint256 blockNumber
+        uint256 _blockNumber
     ) public view checkPid(_pid) returns (uint256) {
-        Pool pool = pools[_pid];
-        User user = users[_pid][_user];
+        StakePool storage pool = pools[_pid];
+        User storage user = users[_pid][_user];
 
         uint256 accMetaNodePerSt = pool.accMetaNodePerSt;
 
-        if (block.number > pool.lastRewardBlock && pool.stTokenAmount > 0) {
+        if (_blockNumber > pool.lastRewardBlock && pool.stTokenAmount > 0) {
             // 当前区块高度大于池最后结算区块高度。
             // 此时必须先计算， 从最后奖励区块高度到当前区块高度的奖励， pool.accMetaNodePerSt 才准确。
             (bool success, uint256 rewards) = getRewardsByBolcks(
                 pool.lastRewardBlock,
-                block.number
+                _blockNumber
             ).tryMul(pool.poolWeight);
             require(success, "multiply overflow");
 
             (success, rewards) = rewards.tryDiv(totalPoolWeight);
             require(success, "divide overflow");
 
-            accMetaNodePerSt = accMetaNodePerSt + rewards * (1 ether) / pool.stTokenAmount;
+            accMetaNodePerSt =
+                accMetaNodePerSt +
+                (rewards * (1 ether)) /
+                pool.stTokenAmount;
         }
 
         return
             (user.stAmount * accMetaNodePerSt) /
             1 ether -
-            finishedMetaNode +
-            user.pendingMetaNode;
+            user.finiDistMetaNode +
+            user.pendToClaimMetaNodeAfterUpdatePoolRewards;
     }
 
     /**
      * @notice Get the staking amount of user
      */
-    function stakingBalance(uint256 _pid, address _user) public view checkPid(_pid) returns (uint256) {
+    function getStakingBalance(
+        uint256 _pid,
+        address _user
+    ) public view checkPid(_pid) returns (uint256) {
         return users[_pid][_user].stAmount;
     }
 
     /**
      * @notice Get the withdraw amount info, including the locked unstake amount and the unlocked unstake amount
      */
-    function withdrawAmount(uint256 _pid, address _user) public view checkPid(_pid) returns (uint256 requestAmount, uint256 pendingWithdrawAmount) {
-        User user = pools[_pid][_user];
-        
+    function getWithdrawAmount(
+        uint256 _pid,
+        address _user
+    )
+        public
+        view
+        checkPid(_pid)
+        returns (uint256 requestAmount, uint256 pendingWithdrawAmount)
+    {
+        User storage user = users[_pid][_user];
+
         for (uint256 index = 0; index < user.requests.length; index++) {
-            if(user.requests[index].unlockBlock > block.number) {
+            if (user.requests[index].unlockBlock > block.number) {
                 pendingWithdrawAmount += user.requests[index].amount;
             }
             requestAmount += user.requests[index].amount;
         }
+    }
+
+    // *************************************** INTERNAL FUNCTION ***************************************
+    function _deposit(uint256 _pid, uint256 _amount) internal checkPid(_pid) {
+        require(_amount > 0, "Deposit amount must be greater than 0");
+
+        StakePool storage pool = pools[_pid];
+        User storage user = users[_pid][msg.sender];
+
+        // 更新质押池奖励状态
+        updatePoolRewards(_pid);
+
+        // 计算用户之前未领取的奖励 （pending rewards）
+        if (pool.stTokenAmount > 0) {
+            (
+                bool success,
+                uint256 _pendToClaimMetaNodeAfterUpdatePoolRewards
+            ) = user.stAmount.tryMul(pool.accMetaNodePerSt);
+            require(success, "overflow");
+            (
+                success,
+                _pendToClaimMetaNodeAfterUpdatePoolRewards
+            ) = _pendToClaimMetaNodeAfterUpdatePoolRewards.tryDiv(1 ether);
+            require(success, "overflow");
+            if (_pendToClaimMetaNodeAfterUpdatePoolRewards > 0) {
+                (
+                    success,
+                    _pendToClaimMetaNodeAfterUpdatePoolRewards
+                ) = _pendToClaimMetaNodeAfterUpdatePoolRewards.tryAdd(
+                    user.pendToClaimMetaNodeAfterUpdatePoolRewards
+                );
+                require(success, "overflow");
+                user
+                    .pendToClaimMetaNodeAfterUpdatePoolRewards = _pendToClaimMetaNodeAfterUpdatePoolRewards;
+            }
+        }
+
+        // 更新用户质押金额
+        (bool success1, uint256 newStAmount) = user.stAmount.tryAdd(_amount);
+        require(success1, "overflow");
+        user.stAmount = newStAmount;
+
+        // 更新质押池的总质押量
+        (bool success2, uint256 stTokenAmount) = pool.stTokenAmount.tryAdd(
+            _amount
+        );
+        require(success2, "overflow");
+        pool.stTokenAmount = stTokenAmount;
+
+        // 更新用户应得但尚未领取的奖励的起点
+        (bool success3, uint256 finiDistMetaNode) = user.stAmount.tryMul(
+            pool.accMetaNodePerSt
+        );
+        require(success3, "overflow");
+        (success3, finiDistMetaNode) = finiDistMetaNode.tryDiv(1 ether);
+        require(success3, "overflow");
+        user.finiDistMetaNode = finiDistMetaNode;
+
+        emit Deposit(msg.sender, _pid, _amount);
     }
 }

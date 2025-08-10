@@ -29,7 +29,7 @@ contract MetaNodeStake is
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant UPGRADE_ROLE = keccak256("UPGRADE_ROLE");
 
-    uint256 public constant ETH_PID = 0;
+    uint256 ETH_PID = 0;
 
     // *************************************** DATA STRUCTS ***************************************
 

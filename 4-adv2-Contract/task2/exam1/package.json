@@ -1,10 +1,12 @@
 {
-  "name": "exam1",
+  "name": "metanode-stake-hardhat",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Hardhat JS tests for MetaNodeStake",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
   },
   "keywords": [],
   "author": "",
@@ -12,7 +14,11 @@
   "type": "commonjs",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "chai": "^4.5.0",
     "hardhat": "^2.26.2"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",

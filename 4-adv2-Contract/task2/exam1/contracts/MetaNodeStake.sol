@@ -155,6 +155,12 @@ contract MetaNodeStake is
         uint256 amount
     );
 
+    event UnstackRequest(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
+
     // *************************************** MODIFIER ***************************************
 
     modifier checkPid(uint256 _pid) {
@@ -525,13 +531,15 @@ contract MetaNodeStake is
             })
         );
 
-        emit Deposit(msg.sender, _pid, _amount);
+        emit UnstackRequest(msg.sender, _pid, _amount);
     }
 
     /**
      * @notice Withdraw tokens from MetaNodeStake.
      */
-    function withdraw(uint256 _pid) public checkPid(_pid) whenNotPaused whenNotWithdrawPaused {
+    function withdraw(
+        uint256 _pid
+    ) public checkPid(_pid) whenNotPaused whenNotWithdrawPaused {
         StakePool storage pool = pools[_pid];
         User storage user = users[_pid][msg.sender];
 
@@ -657,7 +665,7 @@ contract MetaNodeStake is
 
         uint256 accMetaNodePerSt = pool.accMetaNodePerSt;
 
-        if (_blockNumber > pool.lastRewardBlock && pool.stTokenAmount > 0) {
+        if (_blockNumber > pool.lastRewardBlock && pool.stTokenAmount != 0) {
             // 当前区块高度大于池最后结算区块高度。
             // 此时必须先计算， 从最后奖励区块高度到当前区块高度的奖励， pool.accMetaNodePerSt 才准确。
             (bool success, uint256 rewards) = getRewardsByBolcks(
@@ -730,7 +738,7 @@ contract MetaNodeStake is
         updatePoolRewards(_pid);
 
         // 计算用户之前未领取的奖励 （pending rewards）
-        if (pool.stTokenAmount > 0) {
+        if (user.stAmount > 0) {
             (bool success, uint256 _pendToClaimRewards) = user.stAmount.tryMul(
                 pool.accMetaNodePerSt
             );

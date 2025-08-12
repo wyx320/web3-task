@@ -634,6 +634,8 @@ contract MetaNodeStake is
         uint256 popNum;
         if (user.requests.length > 0) {
             for (uint256 i = 0; i < user.requests.length; i++) {
+                console.log("user.requests[i].unlockBlock:", user.requests[i].unlockBlock);
+                console.log("block.number:", block.number);
                 if (user.requests[i].unlockBlock <= block.number) {
                     // 解锁区块已到，允许提取
                     pendingWithdrawAmount += user.requests[i].amount;
@@ -690,7 +692,7 @@ contract MetaNodeStake is
         StakePool storage pool = pools[_pid];
         User storage user = users[_pid][msg.sender];
 
-        console.log("Stake Balance:", address(this).balance);
+        // console.log("Stake Balance:", address(this).balance);
 
         // 更新质押池奖励状态 主要是更新池的 accMetaNodePerSt
         updatePoolRewards(_pid);
@@ -706,17 +708,17 @@ contract MetaNodeStake is
             // 更新用户已领取的奖励
             user.pendToClaimRewards = 0;
 
-            console.log(
-                "claimRewards call: pendToClaimRewards:",
-                pendToClaimRewards
-            );
+            // console.log(
+            //     "claimRewards call: pendToClaimRewards:",
+            //     pendToClaimRewards
+            // );
             // 转账奖励给用户
             MetaNode.safeTransfer(msg.sender, pendToClaimRewards);
 
-            console.log("claimRewards call");
+            // console.log("claimRewards call");
         }
 
-        console.log("claimRewards call");
+        // console.log("claimRewards call");
 
         user.finishedMetaNode =
             (user.stAmount * pool.accMetaNodePerSt) /
